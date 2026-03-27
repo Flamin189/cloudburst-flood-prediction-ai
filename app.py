@@ -34,28 +34,60 @@ FLOOD_MODEL_PATH = 'models/flood_model.pkl'
 def download_model():
     """
     Download the cloudburst model from Google Drive if it doesn't exist locally.
+    Uses gdown for reliable Google Drive downloads.
     """
     if os.path.exists(MODEL_PATH):
+        file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
         print(f"✓ Cloudburst model file exists at: {MODEL_PATH}")
-        print(f"  File size: {os.path.getsize(MODEL_PATH) / (1024*1024):.2f} MB")
-        return True
+        print(f"  File size: {file_size:.2f} MB")
+        
+        # Quick validation - check if file is not corrupted (has reasonable size)
+        if file_size < 1:  # Less than 1MB is likely corrupted
+            print(f"  ⚠️ WARNING: File size seems too small, re-downloading...")
+            os.remove(MODEL_PATH)
+        else:
+            return True
 
     print("⚠️ Attempting to download cloudburst model from Google Drive...")
+    print(f"  URL: {MODEL_URL}")
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
     try:
-        gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+        # Use gdown with explicit parameters for reliability
+        print("  Starting download... (this may take a few minutes)")
+        
+        # Download with progress bar
+        gdown.download(
+            MODEL_URL,
+            MODEL_PATH,
+            quiet=False,
+            use_cookies=False
+        )
+        
         if os.path.exists(MODEL_PATH):
+            file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
             print(f"✓ Model downloaded successfully to: {MODEL_PATH}")
-            print(f"  File size: {os.path.getsize(MODEL_PATH) / (1024*1024):.2f} MB")
+            print(f"  File size: {file_size:.2f} MB")
+            
+            # Validate download
+            if file_size < 1:
+                print(f"✗ Downloaded file is too small (corrupted?), retrying...")
+                os.remove(MODEL_PATH)
+                return False
+            
             return True
         else:
-            print("✗ Model still missing after download attempt")
+            print("✗ Model file not found after download")
             return False
+            
     except Exception as e:
         print(f"✗ Failed to download model: {e}")
-        print("  Note: Make sure the Google Drive file is set to 'Anyone with the link'")
-        print("  Environment: Railway deployment will need model file in repo or alternative source")
+        print(f"  Error type: {type(e).__name__}")
+        print(f"\nTroubleshooting:")
+        print(f"  1. Check URL is correct and file is shared")
+        print(f"  2. Verify: {MODEL_URL}")
+        print(f"  3. Manual download: Open URL in browser, download, save to {MODEL_PATH}")
+        print(f"  4. For Railway: Commit the file to git if download fails")
         return False
 
 # Model loading with safe handling
