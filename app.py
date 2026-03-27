@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
+import tensorflow as tf
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -171,7 +172,7 @@ def load_cloudburst_model():
 
     try:
         print(f"Attempting to load model from: {MODEL_PATH}")
-        model = load_model(MODEL_PATH, compile=False)
+        model = load_model(MODEL_PATH, compile=False, custom_objects={'DTypePolicy': tf.keras.mixed_precision.DTypePolicy})
         # Compile the model for inference
         model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         print(f"✓ Cloudburst model loaded and compiled successfully")
