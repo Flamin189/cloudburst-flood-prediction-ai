@@ -468,30 +468,101 @@ def combine_alerts(cloudburst_result, flood_risk, flood_confidence=None):
 
 # ======================== GLOBAL INSTANCE ========================
 
+class FallbackFloodPredictor:
+    """
+    Fallback flood predictor using simple heuristics when ML models are unavailable
+    Provides reasonable predictions based on environmental factors without trained models
+    """
+    
+    def predict_from_csv(self, csv_path):
+        """Make fallback prediction based on simple environmental rules"""
+        print("⚠️ Using FALLBACK predictor (ML models unavailable)")
+        
+        try:
+            df = pd.read_csv(csv_path)
+            if len(df) == 0:
+                return None, "CSV is empty"
+            
+            row = df.iloc[0]
+            
+            # Extract key parameters with safe defaults
+            rainfall_intensity = float(row.get('rainfall_intensity', 0))
+            rainfall_duration = float(row.get('rainfall_duration', 0))
+            humidity = float(row.get('humidity', 0))
+            elevation = float(row.get('elevation', 500))
+            
+            # Simple heuristic-based prediction
+            risk_score = 0
+            
+            # High rainfall intensity = high risk
+            if rainfall_intensity > 100:
+                risk_score += 3
+            elif rainfall_intensity > 50:
+                risk_score += 2
+            elif rainfall_intensity > 20:
+                risk_score += 1
+            
+            # Sustained rainfall = high risk
+            if rainfall_duration > 12:
+                risk_score += 2
+            elif rainfall_duration > 6:
+                risk_score += 1
+            
+            # High humidity + rainfall = higher risk
+            if humidity > 80 and rainfall_intensity > 30:
+                risk_score += 1
+            
+            # Low elevation = higher risk (water flows down)
+            if elevation < 200:
+                risk_score += 1
+            
+            # Determine risk level
+            if risk_score >= 5:
+                flood_risk = "High"
+                confidence = min(0.85, 0.5 + (risk_score * 0.1))
+            elif risk_score >= 3:
+                flood_risk = "Medium"
+                confidence = min(0.75, 0.4 + (risk_score * 0.1))
+            else:
+                flood_risk = "Low"
+                confidence = min(0.65, 0.3 + (risk_score * 0.1))
+            
+            print(f"  Fallback prediction: {flood_risk} (score: {risk_score}, confidence: {confidence:.2%})")
+            
+            return {
+                'flood_risk': flood_risk,
+                'confidence': confidence,
+                'probabilities': {'Low': 1-confidence, 'Medium': 0, 'High': confidence}
+            }, None
+            
+        except Exception as e:
+            return None, f"Fallback prediction failed: {str(e)}"
+
+
 _flood_predictor = None
 
 
 def get_flood_predictor():
-    """Get or create global flood predictor instance"""
+    """Get or create global flood predictor instance with fallback support"""
     global _flood_predictor
     
     if _flood_predictor is None:
         try:
             _flood_predictor = FloodPredictor()
+            print("\n✓ Flood predictor loaded successfully (ML models)")
         except FileNotFoundError as e:
-            print(f"\n✗ CRITICAL: Flood predictor initialization failed")
-            print(f"   Missing files or directory error: {e}")
-            print(f"   Fix: Ensure models/ directory with all .pkl files is in repository")
-            return None
+            print(f"\n⚠️ WARNING: Flood predictor models not found: {e}")
+            print(f"   Switching to FALLBACK mode (heuristic-based predictions)")
+            print(f"   Fix: Ensure models/ directory with all .pkl files is deployed to Railway")
+            _flood_predictor = FallbackFloodPredictor()
         except (pickle.PickleError, EOFError) as e:
-            print(f"\n✗ CRITICAL: Model file corruption detected")
-            print(f"   Error: {e}")
-            print(f"   Fix: Re-commit model files or regenerate models")
-            return None
+            print(f"\n⚠️ WARNING: Model file corruption detected: {e}")
+            print(f"   Switching to FALLBACK mode (heuristic-based predictions)")
+            _flood_predictor = FallbackFloodPredictor()
         except Exception as e:
-            print(f"\n✗ CRITICAL: Unexpected error initializing flood predictor")
+            print(f"\n⚠️ WARNING: Unexpected error loading flood predictor: {e}")
             print(f"   Error type: {type(e).__name__}")
-            print(f"   Error: {e}")
-            return None
+            print(f"   Switching to FALLBACK mode (heuristic-based predictions)")
+            _flood_predictor = FallbackFloodPredictor()
     
     return _flood_predictor
