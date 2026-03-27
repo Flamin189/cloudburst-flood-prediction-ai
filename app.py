@@ -14,7 +14,7 @@ import sqlite3
 import datetime
 from datetime import datetime
 from flood_predictor import get_flood_predictor, combine_alerts, fetch_latest_cloudburst_from_db
-import gdown
+import requests
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -26,15 +26,15 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Model configuration
 MODEL_PATH = 'models/AlexNet_best.h5'
-MODEL_URL = 'https://drive.google.com/uc?export=download&id=1khdF5Xn9nTkVqmQti_44RdT-XcRTkgxr'
+MODEL_URL = 'https://www.dropbox.com/scl/fi/4n6afmb8magdqfgjowzoo/AlexNet_best.h5?rlkey=qcrl8576wq91kcscc0nx0scq9&st=5olzgxkr&dl=1'
 
 # Keep flood model local if small (<100MB) and present in repo
 FLOOD_MODEL_PATH = 'models/flood_model.pkl'
 
 def download_model():
     """
-    Download the cloudburst model from Google Drive if it doesn't exist locally.
-    Uses gdown for reliable Google Drive downloads with retries.
+    Download the cloudburst model from Dropbox if it doesn't exist locally.
+    Uses requests for reliable downloads with retries.
     """
     if os.path.exists(MODEL_PATH):
         file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
@@ -48,7 +48,7 @@ def download_model():
         else:
             return True
 
-    print("⚠️ Attempting to download cloudburst model from Google Drive...")
+    print("⚠️ Attempting to download cloudburst model from Dropbox...")
     print(f"  URL: {MODEL_URL}")
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
@@ -58,14 +58,13 @@ def download_model():
         try:
             print(f"  Starting download attempt {attempt + 1}/{max_retries}... (this may take a few minutes)")
             
-            # Download with progress bar
-            gdown.download(
-                MODEL_URL,
-                MODEL_PATH,
-                quiet=False,
-                use_cookies=False,
-                fuzzy=True  # Try fuzzy extraction if needed
-            )
+            # Download using requests
+            response = requests.get(MODEL_URL, stream=True, timeout=300)  # 5 minute timeout
+            response.raise_for_status()
+            
+            with open(MODEL_PATH, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
             
             if os.path.exists(MODEL_PATH):
                 file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
@@ -92,10 +91,9 @@ def download_model():
                 print("  Retrying...")
             else:
                 print(f"\nTroubleshooting:")
-                print(f"  1. Check URL is correct and file is shared publicly")
-                print(f"  2. Verify sharing settings: Right-click file > Share > 'Anyone with the link' > Viewer")
-                print(f"  3. Test URL manually: {MODEL_URL}")
-                print(f"  4. For Railway: Consider committing the file to git if download fails")
+                print(f"  1. Check URL is correct and accessible")
+                print(f"  2. Test URL manually: {MODEL_URL}")
+                print(f"  3. For Railway: Consider committing the file to git if download fails")
     
     return False
 
@@ -117,9 +115,9 @@ def load_cloudburst_model():
     if not download_model():
         print(f"✗ Critical: Cloudburst model not available")
         print(f"  - Model file missing: {MODEL_PATH}")
-        print(f"  - Google Drive download failed after retries")
+        print(f"  - Dropbox download failed after retries")
         print(f"  - Application will continue but cloudburst predictions will fail")
-        print(f"  - Check Google Drive sharing permissions and URL")
+        print(f"  - Check Dropbox sharing link and accessibility")
         return None
 
     try:
