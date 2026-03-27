@@ -34,7 +34,7 @@ FLOOD_MODEL_PATH = 'models/flood_model.pkl'
 def download_model():
     """
     Download the cloudburst model from Google Drive if it doesn't exist locally.
-    Uses gdown for reliable Google Drive downloads.
+    Uses gdown for reliable Google Drive downloads with retries.
     """
     if os.path.exists(MODEL_PATH):
         file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
@@ -52,49 +52,59 @@ def download_model():
     print(f"  URL: {MODEL_URL}")
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
-    try:
-        # Use gdown with explicit parameters for reliability
-        print("  Starting download... (this may take a few minutes)")
-        
-        # Download with progress bar
-        gdown.download(
-            MODEL_URL,
-            MODEL_PATH,
-            quiet=False,
-            use_cookies=False
-        )
-        
-        if os.path.exists(MODEL_PATH):
-            file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
-            print(f"✓ Model downloaded successfully to: {MODEL_PATH}")
-            print(f"  File size: {file_size:.2f} MB")
+    # Retry download up to 3 times
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            print(f"  Starting download attempt {attempt + 1}/{max_retries}... (this may take a few minutes)")
             
-            # Validate download
-            if file_size < 1:
-                print(f"✗ Downloaded file is too small (corrupted?), retrying...")
-                os.remove(MODEL_PATH)
-                return False
+            # Download with progress bar
+            gdown.download(
+                MODEL_URL,
+                MODEL_PATH,
+                quiet=False,
+                use_cookies=False,
+                fuzzy=True  # Try fuzzy extraction if needed
+            )
             
-            return True
-        else:
-            print("✗ Model file not found after download")
-            return False
-            
-    except Exception as e:
-        print(f"✗ Failed to download model: {e}")
-        print(f"  Error type: {type(e).__name__}")
-        print(f"\nTroubleshooting:")
-        print(f"  1. Check URL is correct and file is shared")
-        print(f"  2. Verify: {MODEL_URL}")
-        print(f"  3. Manual download: Open URL in browser, download, save to {MODEL_PATH}")
-        print(f"  4. For Railway: Commit the file to git if download fails")
-        return False
+            if os.path.exists(MODEL_PATH):
+                file_size = os.path.getsize(MODEL_PATH) / (1024*1024)
+                print(f"✓ Model downloaded successfully to: {MODEL_PATH}")
+                print(f"  File size: {file_size:.2f} MB")
+                
+                # Validate download
+                if file_size < 1:
+                    print(f"✗ Downloaded file is too small (corrupted?), will retry...")
+                    os.remove(MODEL_PATH)
+                    continue
+                
+                return True
+            else:
+                print(f"✗ Model file not found after download attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    print("  Retrying...")
+                continue
+                
+        except Exception as e:
+            print(f"✗ Failed to download model on attempt {attempt + 1}: {e}")
+            print(f"  Error type: {type(e).__name__}")
+            if attempt < max_retries - 1:
+                print("  Retrying...")
+            else:
+                print(f"\nTroubleshooting:")
+                print(f"  1. Check URL is correct and file is shared publicly")
+                print(f"  2. Verify sharing settings: Right-click file > Share > 'Anyone with the link' > Viewer")
+                print(f"  3. Test URL manually: {MODEL_URL}")
+                print(f"  4. For Railway: Consider committing the file to git if download fails")
+    
+    return False
 
 # Model loading with safe handling
 def load_cloudburst_model():
     """
     Safely load the cloudburst model with error handling.
     Provides detailed diagnostic information for troubleshooting.
+    Exits application if model cannot be loaded (no fallbacks).
     """
     model_path_abs = os.path.abspath(MODEL_PATH)
     print(f"\n{'='*60}")
@@ -107,9 +117,11 @@ def load_cloudburst_model():
     if not download_model():
         print(f"✗ Critical: Cloudburst model not available")
         print(f"  - Model file missing: {MODEL_PATH}")
-        print(f"  - Google Drive download failed")
-        print(f"  - Deployment note: Ensure models are committed to repository")
-        return None
+        print(f"  - Google Drive download failed after retries")
+        print(f"  - Application cannot start without the model")
+        print(f"  - Check Google Drive sharing permissions and URL")
+        import sys
+        sys.exit(1)
 
     try:
         print(f"Attempting to load model from: {MODEL_PATH}")
@@ -121,8 +133,9 @@ def load_cloudburst_model():
         print(f"✗ Error loading cloudburst model: {e}")
         print(f"  Type: {type(e).__name__}")
         print(f"  Ensure TensorFlow/Keras is properly installed")
-        print(f"{'='*60}\n")
-        return None
+        print(f"  Application cannot start without the model")
+        import sys
+        sys.exit(1)
 
 # Load the model on startup
 print(f"\n{'@'*60}")
@@ -329,76 +342,37 @@ def send_alert_email(to_email, flood_risk, cloudburst_result=None, confidence=No
         print(f"❌ Error sending emergency alert email: {e}")
         return False
 
-def predict_image_fallback(image_path):
+def predict_image(image_path):
     """
-    Fallback image prediction using simple image analysis
-    When CloudBurst model is unavailable, analyzes image characteristics
+    Predict cloudburst from image using ML model
+    Returns (result, confidence) tuple
     """
+    if model is None:
+        raise RuntimeError(
+            "❌ CloudBurst model is not available! "
+            "Please ensure AlexNet_best.h5 is downloaded and available in models/ directory."
+        )
+    
+    img = image.load_img(image_path, target_size=(224, 224))
+    img_array = image.img_to_array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    
     try:
-        img = image.load_img(image_path, target_size=(224, 224))
-        img_array = image.img_to_array(img) / 255.0
+        prediction = model.predict(img_array)[0][0]
         
-        # Simple heuristic: check image brightness and contrast
-        # Dark/gray images more likely to be storm clouds
-        mean_brightness = np.mean(img_array)
-        std_brightness = np.std(img_array)
-        
-        # Storm clouds are typically darker and lower contrast
-        threshold_brightness = 0.5
-        threshold_std = 0.15
-        
-        if mean_brightness < threshold_brightness and std_brightness < threshold_std:
-            # Likely cloud burst (dark, low contrast - typical storm)
+        if prediction < 0.5:
             result = "Cloud Burst"
-            confidence = min(85, 60 + (1 - mean_brightness) * 50)
+            confidence = (1 - prediction) * 100
         else:
             result = "Normal Cloud"
-            confidence = 100 - confidence if 'confidence' in locals() else 50
+            confidence = prediction * 100
         
-        print(f"⚠️ Using fallback CloudBurst prediction (model unavailable)")
-        print(f"   Brightness: {mean_brightness:.2f}, Std: {std_brightness:.2f}")
-        print(f"   Result: {result} ({confidence:.1f}%)")
-        
+        print(f"✓ CloudBurst prediction: {result} ({confidence:.1f}%)")
         return result, confidence
         
     except Exception as e:
-        print(f"✗ Fallback prediction also failed: {e}")
-        return "Unable to predict", 0.0
-
-def predict_image(image_path):
-    """
-    Predict cloudburst from image
-    Returns (result, confidence) tuple
-    Uses fallback if ML model is unavailable
-    """
-    if model is not None:
-        # Use ML model
-        img = image.load_img(image_path, target_size=(224, 224))
-        img_array = image.img_to_array(img) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
-        
-        try:
-            prediction = model.predict(img_array)[0][0]
-            
-            if prediction < 0.5:
-                result = "Cloud Burst"
-                confidence = (1 - prediction) * 100
-            else:
-                result = "Normal Cloud"
-                confidence = prediction * 100
-            
-            print(f"✓ CloudBurst prediction using ML model: {result} ({confidence:.1f}%)")
-            return result, confidence
-            
-        except Exception as e:
-            print(f"✗ CloudBurst model inference failed: {e}")
-            print(f"   Falling back to heuristic prediction...")
-            return predict_image_fallback(image_path)
-    
-    else:
-        # Model not available, use fallback
-        print(f"⚠️ CloudBurst model not available, using fallback heuristic")
-        return predict_image_fallback(image_path)
+        print(f"✗ CloudBurst model inference failed: {e}")
+        raise RuntimeError(f"Model inference error: {e}")
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -593,7 +567,11 @@ def predict():
             file.save(file_path)
             
             # Make prediction
-            result, confidence = predict_image(file_path)
+            try:
+                result, confidence = predict_image(file_path)
+            except RuntimeError as e:
+                flash(str(e), 'danger')
+                return redirect(request.url)
             
             # Save prediction to database
             conn = get_db_connection()
