@@ -122,8 +122,10 @@ def load_cloudburst_model():
 
     try:
         print(f"Attempting to load model from: {MODEL_PATH}")
-        model = load_model(MODEL_PATH)
-        print(f"✓ Cloudburst model loaded successfully")
+        model = load_model(MODEL_PATH, compile=False)
+        # Compile the model for inference
+        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        print(f"✓ Cloudburst model loaded and compiled successfully")
         print(f"{'='*60}\n")
         return model
     except Exception as e:
