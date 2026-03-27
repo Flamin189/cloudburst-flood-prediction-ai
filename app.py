@@ -28,32 +28,43 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MODEL_PATH = 'models/AlexNet_best.h5'
 MODEL_URL = 'https://drive.google.com/uc?id=1khdF5Xn9nTkVqmQti_44RdT-XcRTkgxr'
 
+# Keep flood model local if small (<100MB) and present in repo
+FLOOD_MODEL_PATH = 'models/flood_model.pkl'
+
 def download_model():
     """
     Download the cloudburst model from Google Drive if it doesn't exist locally.
     """
-    if not os.path.exists(MODEL_PATH):
-        print("Downloading model...")
-        # Create models directory if it doesn't exist
-        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-        try:
-            # Download the model
-            gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
-            print("✓ Model downloaded successfully")
-        except Exception as e:
-            print(f"✗ Failed to download model: {e}")
-            print("Note: Make sure the Google Drive link is publicly accessible")
-            raise
-    else:
+    if os.path.exists(MODEL_PATH):
         print("Model already exists, skipping download.")
+        return True
+
+    print("Downloading cloudburst model from Google Drive...")
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+
+    try:
+        gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+        if os.path.exists(MODEL_PATH):
+            print("✓ Model downloaded successfully")
+            return True
+        else:
+            print("✗ Model still missing after download attempt")
+            return False
+    except Exception as e:
+        print(f"✗ Failed to download model: {e}")
+        print("Note: Make sure the Google Drive file is set to 'Anyone with the link'")
+        return False
 
 # Model loading with safe handling
 def load_cloudburst_model():
     """
     Safely load the cloudburst model with error handling.
     """
+    if not download_model():
+        print("⚠️ Cloudburst model not available locally and download failed")
+        return None
+
     try:
-        download_model()  # Ensure model is downloaded
         model = load_model(MODEL_PATH)
         print("✓ Cloudburst model loaded successfully")
         return model
@@ -265,13 +276,18 @@ def send_alert_email(to_email, flood_risk, cloudburst_result=None, confidence=No
 
 def predict_image(image_path):
     if model is None:
+        print("⚠️ Cloudburst model unavailable during prediction; returning safe response.")
         return "Cloudburst model not available", 0.0
     
     img = image.load_img(image_path, target_size=(224, 224))
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
     
-    prediction = model.predict(img_array)[0][0]
+    try:
+        prediction = model.predict(img_array)[0][0]
+    except Exception as e:
+        print(f"✗ Cloudburst model inference failed: {e}")
+        return "Cloudburst model not available", 0.0
     
     if prediction < 0.5:
         result = "Cloud Burst"
