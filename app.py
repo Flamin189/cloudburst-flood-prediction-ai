@@ -15,6 +15,50 @@ import datetime
 from datetime import datetime
 from flood_predictor import get_flood_predictor, combine_alerts, fetch_latest_cloudburst_from_db
 import requests
+import h5py
+import json
+
+def fix_model_config(h5_path):
+    """
+    Fix Keras model config compatibility issues in .h5 file.
+    Replaces 'batch_shape' with 'batch_input_shape' in InputLayer config.
+    """
+    try:
+        with h5py.File(h5_path, 'r+') as f:
+            if 'model_config' in f.attrs:
+                model_config_str = f.attrs['model_config']
+                if isinstance(model_config_str, bytes):
+                    model_config_str = model_config_str.decode('utf-8')
+                
+                # Parse the JSON config
+                config = json.loads(model_config_str)
+                
+                # Recursively fix InputLayer configs
+                def fix_layer(layer_config):
+                    if isinstance(layer_config, dict):
+                        if layer_config.get('class_name') == 'InputLayer':
+                            if 'config' in layer_config and 'batch_shape' in layer_config['config']:
+                                # Move batch_shape to batch_input_shape
+                                layer_config['config']['batch_input_shape'] = layer_config['config'].pop('batch_shape')
+                                print("  Fixed InputLayer config: replaced 'batch_shape' with 'batch_input_shape'")
+                        # Recurse into nested layers
+                        for key, value in layer_config.items():
+                            if isinstance(value, (dict, list)):
+                                fix_layer(value)
+                    elif isinstance(layer_config, list):
+                        for item in layer_config:
+                            fix_layer(item)
+                
+                fix_layer(config)
+                
+                # Save back the fixed config
+                fixed_config_str = json.dumps(config)
+                f.attrs['model_config'] = fixed_config_str.encode('utf-8')
+                print("  Model config fixed successfully")
+                return True
+    except Exception as e:
+        print(f"  Failed to fix model config: {e}")
+        return False
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -119,6 +163,11 @@ def load_cloudburst_model():
         print(f"  - Application will continue but cloudburst predictions will fail")
         print(f"  - Check Dropbox sharing link and accessibility")
         return None
+
+    # Fix model config for compatibility
+    print("  Attempting to fix model config for compatibility...")
+    if not fix_model_config(MODEL_PATH):
+        print("  Model config fix failed, but continuing with load attempt...")
 
     try:
         print(f"Attempting to load model from: {MODEL_PATH}")
