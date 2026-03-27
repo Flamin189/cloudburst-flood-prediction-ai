@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Flash Flood Forecasting{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">🌊 Flash Flood Prediction</h3>
+                    <small>Upload environmental data to predict flood risk</small>
+                </div>
+                <div class="card-body">
+                    <!-- Instructions -->
+                    <div class="alert alert-info" role="alert">
+                        <h5>📋 CSV File Requirements</h5>
+                        <p>Your CSV file must include the following columns:</p>
+                        <ul>
+                            <li><strong>rainfall</strong> - Rainfall amount (0-100)</li>
+                            <li><strong>humidity</strong> - Humidity percentage (0-100)</li>
+                            <li><strong>temperature</strong> - Temperature in Celsius (-50 to 60)</li>
+                        </ul>
+                        <p class="mb-0">The system will use the first row of data for prediction.</p>
+                    </div>
+
+                    <!-- Example Data -->
+                    <div class="alert alert-secondary" role="alert">
+                        <h5>📝 Example CSV Format</h5>
+                        <pre><code>rainfall,humidity,temperature
+75.5,85.2,22
+45.0,60.1,18
+90.0,95.5,15</code></pre>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="csv_file"><strong>Select CSV File</strong></label>
+                            <input type="file" 
+                                   class="form-control-file" 
+                                   id="csv_file" 
+                                   name="csv_file" 
+                                   accept=".csv" 
+                                   required>
+                            <small class="form-text text-muted">Only .csv files are accepted</small>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                                <i class="fas fa-upload"></i> Upload & Predict
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Features Section -->
+                    <hr class="my-4">
+                    <h5>✨ Features</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Machine Learning Prediction:</strong> Uses RandomForestClassifier trained on environmental patterns
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Multi-level Risk Assessment:</strong> Low, Medium, or High flood risk
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Confidence Scoring:</strong> See how confident the model is in its prediction
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Integrated Alerts:</strong> Combined analysis with cloudburst detection for comprehensive hazard assessment
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Email Notifications:</strong> Automatic alerts sent for critical conditions
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recent Predictions Section -->
+            <div class="card shadow-lg mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📊 Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('predict') }}" class="btn btn-info btn-block mb-2">
+                        <i class="fas fa-image"></i> Cloudburst Detection (Image Analysis)
+                    </a>
+                    <a href="{{ url_for('user_home') }}" class="btn btn-secondary btn-block">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+    
+    .alert {
+        border-left: 4px solid;
+    }
+    
+    .alert-info {
+        border-left-color: #0c5460;
+    }
+    
+    .alert-secondary {
+        border-left-color: #5a6c7d;
+    }
+    
+    pre {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        overflow-x: auto;
+    }
+</style>
+{% endblock %}

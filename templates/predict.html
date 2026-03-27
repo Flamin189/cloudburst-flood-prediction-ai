@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Cloud Burst Detection</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('predict') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Upload Cloud Image</label>
+                        <input type="file" class="form-control" id="file" name="file" accept="image/*" required>
+                        <div class="form-text">Please upload a PNG, JPG, or JPEG image of clouds.</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Predict</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">How to Use</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Click on the "Choose File" button and select an image of clouds from your device.</li>
+                    <li>Click on the "Predict" button to analyze the image.</li>
+                    <li>Wait for the system to process the image and provide a prediction.</li>
+                    <li>If a cloud burst is detected, you will receive an email alert.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

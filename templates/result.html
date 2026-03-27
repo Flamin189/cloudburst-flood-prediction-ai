@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if result == "Cloud Burst" %}
+<div class="video-container">
+    <video autoplay muted loop id="bg-video">
+        <source src="{{ url_for('static', filename='videos/rain.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="overlay"></div>
+</div>
+{% else %}
+<div class="video-container">
+    <video autoplay muted loop id="bg-video">
+        <source src="{{ url_for('static', filename='videos/sky.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="overlay"></div>
+</div>
+{% endif %}
+
+<div class="result-container">
+    <div class="card">
+        <div class="card-header {% if result == "Cloud Burst" %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+            <h4 class="mb-0">Prediction Result</h4>
+        </div>
+        <div class="card-body text-center">
+            {% if result == "Cloud Burst" %}
+                <i class="fas fa-exclamation-triangle fa-4x text-danger mb-3"></i>
+                <h2 class="text-danger">Cloud Burst Detected!</h2>
+                <p class="lead">An alert has been sent to your email.</p>
+            {% else %}
+                <i class="fas fa-cloud-sun fa-4x text-success mb-3"></i>
+                <h2 class="text-success">Normal Cloud</h2>
+                <p class="lead">No cloud burst detected.</p>
+            {% endif %}
+            
+            <div class="progress mt-4 mb-4" style="height: 30px;">
+                <div class="progress-bar {% if result == "Cloud Burst" %}bg-danger{% else %}bg-success{% endif %}" 
+                     role="progressbar" 
+                     style="width: {{ confidence }}%;" 
+                     aria-valuenow="{{ confidence }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    {{ confidence }}% Confidence
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5>Uploaded Image</h5>
+                    <div class="image-container">
+                        <img src="{{ image_path }}" class="img-fluid rounded" alt="Uploaded image" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5>Prediction Details</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Prediction</th>
+                            <td>{{ result }}</td>
+                        </tr>
+                        <tr>
+                            <th>Confidence</th>
+                            <td>{{ confidence }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Date & Time</th>
+                            <td>{{ current_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('upload_csv', cloudburst=result) }}" class="btn btn-warning btn-lg mr-2">
+                    <i class="fas fa-water"></i> Proceed to Flood Risk Analysis
+                </a>
+                <a href="{{ url_for('predict') }}" class="btn btn-primary mr-2">Make Another Prediction</a>
+                <a href="{{ url_for('user_home') }}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
