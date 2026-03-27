@@ -50,44 +50,80 @@ class FloodPredictor:
         self.load_model()
     
     def load_model(self):
-        """Load trained model and all required encoders"""
+        """Load trained model and all required encoders with detailed diagnostics"""
+        print(f"\n{'='*60}")
+        print(f"Loading Flood Prediction Models")
+        print(f"{'='*60}")
+        print(f"Current working directory: {os.getcwd()}")
+        
+        model_files = [
+            ("RandomForest Model", self.model_path),
+            ("Target Label Encoder", self.target_encoder_path),
+            ("Categorical Encoder", self.categorical_encoder_path),
+            ("Feature Names", self.feature_names_path)
+        ]
+        
+        # First, check all files exist
+        print("\nChecking model files:")
+        all_files_exist = True
+        for name, path in model_files:
+            abs_path = os.path.abspath(path)
+            exists = os.path.exists(path)
+            status = "✓" if exists else "✗"
+            print(f"  {status} {name}: {path}")
+            if exists:
+                size = os.path.getsize(path) / (1024)  # KB
+                print(f"     Size: {size:.2f} KB")
+            else:
+                all_files_exist = False
+                print(f"     NOT FOUND: {abs_path}")
+        
+        if not all_files_exist:
+            missing = [name for name, path in model_files if not os.path.exists(path)]
+            error_msg = f"Missing model files: {', '.join(missing)}"
+            print(f"\n✗ Critical: {error_msg}")
+            print(f"\nDeployment checklist:")
+            print(f"  1. Verify models/ directory exists in repository")
+            print(f"  2. Commit all .pkl files to git")
+            print(f"  3. Ensure Railway deploys from main branch with models/")
+            print(f"{'='*60}\n")
+            raise FileNotFoundError(error_msg)
+        
         try:
-            # Check if model file exists
-            if not os.path.exists(self.model_path):
-                raise FileNotFoundError(f"Model file not found: {self.model_path}")
-            
             # Load RandomForest model
+            print(f"\nLoading RandomForest model from {self.model_path}...")
             with open(self.model_path, 'rb') as f:
                 self.model = pickle.load(f)
-            print(f"✓ RandomForest model loaded from {self.model_path}")
+            print(f"✓ RandomForest model loaded")
             
             # Load target label encoder
-            if not os.path.exists(self.target_encoder_path):
-                raise FileNotFoundError(f"Target encoder not found: {self.target_encoder_path}")
-            
+            print(f"Loading target label encoder from {self.target_encoder_path}...")
             with open(self.target_encoder_path, 'rb') as f:
                 self.target_encoder = pickle.load(f)
-            print(f"✓ Target label encoder loaded from {self.target_encoder_path}")
+            print(f"✓ Target label encoder loaded")
             
             # Load categorical encoder (OneHotEncoder)
-            if not os.path.exists(self.categorical_encoder_path):
-                raise FileNotFoundError(f"Categorical encoder not found: {self.categorical_encoder_path}")
-            
+            print(f"Loading categorical encoder from {self.categorical_encoder_path}...")
             with open(self.categorical_encoder_path, 'rb') as f:
                 self.categorical_encoder = pickle.load(f)
-            print(f"✓ Categorical encoder loaded from {self.categorical_encoder_path}")
+            print(f"✓ Categorical encoder loaded")
             
             # Load feature names
-            if not os.path.exists(self.feature_names_path):
-                raise FileNotFoundError(f"Feature names not found: {self.feature_names_path}")
-            
+            print(f"Loading feature names from {self.feature_names_path}...")
             with open(self.feature_names_path, 'rb') as f:
                 self.feature_names = pickle.load(f)
-            print(f"✓ Feature names loaded from {self.feature_names_path}")
-            print(f"  Model features: {len(self.feature_names)}")
+            print(f"✓ Feature names loaded")
+            print(f"  Total features: {len(self.feature_names)}")
+            print(f"  Features: {self.feature_names[:3]}... (showing first 3)")
             
-        except Exception as e:
-            print(f"✗ Error loading model: {e}")
+            print(f"\n✓ All flood models loaded successfully!")
+            print(f"{'='*60}\n")
+            
+        except (pickle.PickleError, EOFError, IOError) as e:
+            print(f"✗ Error loading model files: {e}")
+            print(f"  Type: {type(e).__name__}")
+            print(f"  Ensure model files are uncorrupted .pkl files")
+            print(f"{'='*60}\n")
             raise
     
     def validate_csv_columns(self, df):
@@ -442,8 +478,20 @@ def get_flood_predictor():
     if _flood_predictor is None:
         try:
             _flood_predictor = FloodPredictor()
+        except FileNotFoundError as e:
+            print(f"\n✗ CRITICAL: Flood predictor initialization failed")
+            print(f"   Missing files or directory error: {e}")
+            print(f"   Fix: Ensure models/ directory with all .pkl files is in repository")
+            return None
+        except (pickle.PickleError, EOFError) as e:
+            print(f"\n✗ CRITICAL: Model file corruption detected")
+            print(f"   Error: {e}")
+            print(f"   Fix: Re-commit model files or regenerate models")
+            return None
         except Exception as e:
-            print(f"Warning: Could not initialize flood predictor: {e}")
+            print(f"\n✗ CRITICAL: Unexpected error initializing flood predictor")
+            print(f"   Error type: {type(e).__name__}")
+            print(f"   Error: {e}")
             return None
     
     return _flood_predictor

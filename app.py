@@ -36,43 +36,66 @@ def download_model():
     Download the cloudburst model from Google Drive if it doesn't exist locally.
     """
     if os.path.exists(MODEL_PATH):
-        print("Model already exists, skipping download.")
+        print(f"✓ Cloudburst model file exists at: {MODEL_PATH}")
+        print(f"  File size: {os.path.getsize(MODEL_PATH) / (1024*1024):.2f} MB")
         return True
 
-    print("Downloading cloudburst model from Google Drive...")
+    print("⚠️ Attempting to download cloudburst model from Google Drive...")
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
     try:
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
         if os.path.exists(MODEL_PATH):
-            print("✓ Model downloaded successfully")
+            print(f"✓ Model downloaded successfully to: {MODEL_PATH}")
+            print(f"  File size: {os.path.getsize(MODEL_PATH) / (1024*1024):.2f} MB")
             return True
         else:
             print("✗ Model still missing after download attempt")
             return False
     except Exception as e:
         print(f"✗ Failed to download model: {e}")
-        print("Note: Make sure the Google Drive file is set to 'Anyone with the link'")
+        print("  Note: Make sure the Google Drive file is set to 'Anyone with the link'")
+        print("  Environment: Railway deployment will need model file in repo or alternative source")
         return False
 
 # Model loading with safe handling
 def load_cloudburst_model():
     """
     Safely load the cloudburst model with error handling.
+    Provides detailed diagnostic information for troubleshooting.
     """
+    model_path_abs = os.path.abspath(MODEL_PATH)
+    print(f"\n{'='*60}")
+    print(f"Loading Cloudburst Model")
+    print(f"{'='*60}")
+    print(f"Expected path: {model_path_abs}")
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"File exists: {os.path.exists(MODEL_PATH)}")
+    
     if not download_model():
-        print("⚠️ Cloudburst model not available locally and download failed")
+        print(f"✗ Critical: Cloudburst model not available")
+        print(f"  - Model file missing: {MODEL_PATH}")
+        print(f"  - Google Drive download failed")
+        print(f"  - Deployment note: Ensure models are committed to repository")
         return None
 
     try:
+        print(f"Attempting to load model from: {MODEL_PATH}")
         model = load_model(MODEL_PATH)
-        print("✓ Cloudburst model loaded successfully")
+        print(f"✓ Cloudburst model loaded successfully")
+        print(f"{'='*60}\n")
         return model
     except Exception as e:
         print(f"✗ Error loading cloudburst model: {e}")
+        print(f"  Type: {type(e).__name__}")
+        print(f"  Ensure TensorFlow/Keras is properly installed")
+        print(f"{'='*60}\n")
         return None
 
-# Load the model
+# Load the model on startup
+print(f"\n{'@'*60}")
+print("APPLICATION STARTUP: Loading ML Models")
+print(f"{'@'*60}\n")
 model = load_cloudburst_model()
 
 # Database setup
@@ -275,9 +298,16 @@ def send_alert_email(to_email, flood_risk, cloudburst_result=None, confidence=No
         return False
 
 def predict_image(image_path):
+    """
+    Predict cloudburst from image
+    Returns (result, confidence) tuple
+    """
     if model is None:
-        print("⚠️ Cloudburst model unavailable during prediction; returning safe response.")
-        return "Cloudburst model not available", 0.0
+        error_msg = "Cloudburst model not available"
+        print(f"⚠️ {error_msg} during prediction; returning safe response.")
+        print(f"   → User will see 'Model Unavailable' in UI")
+        print(f"   → Check app startup logs for model loading errors")
+        return error_msg, 0.0
     
     img = image.load_img(image_path, target_size=(224, 224))
     img_array = image.img_to_array(img) / 255.0
@@ -642,7 +672,12 @@ def upload_csv():
             # Load flood predictor
             flood_predictor = get_flood_predictor()
             if flood_predictor is None:
-                flash('Flood prediction model not available. Please restart the application.', 'warning')
+                error_msg = 'Flood prediction model not available. This is a deployment issue.'
+                print(f"⚠️ {error_msg}")
+                print(f"   Cause: Model files not found in models/ directory")
+                print(f"   Fix: Ensure models/ folder with .pkl files is committed to repository")
+                print(f"   Reference: See startup logs above")
+                flash(error_msg, 'warning')
                 return redirect(request.url)
             
             # Read CSV and validate columns
