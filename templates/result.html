@@ -21,7 +21,7 @@
 
 <div class="result-container">
     <div class="card">
-        <div class="card-header {% if result == "Cloud Burst" %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+        <div class="card-header {% if result == "Cloud Burst" %}bg-danger text-white{% elif result == "Cloudburst model not available" %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
             <h4 class="mb-0">Prediction Result</h4>
         </div>
         <div class="card-body text-center">
@@ -29,6 +29,10 @@
                 <i class="fas fa-exclamation-triangle fa-4x text-danger mb-3"></i>
                 <h2 class="text-danger">Cloud Burst Detected!</h2>
                 <p class="lead">An alert has been sent to your email.</p>
+            {% elif result == "Cloudburst model not available" %}
+                <i class="fas fa-exclamation-circle fa-4x text-warning mb-3"></i>
+                <h2 class="text-warning">Model Unavailable</h2>
+                <p class="lead">Cloudburst model not available. Please try again later.</p>
             {% else %}
                 <i class="fas fa-cloud-sun fa-4x text-success mb-3"></i>
                 <h2 class="text-success">Normal Cloud</h2>
@@ -36,13 +40,13 @@
             {% endif %}
             
             <div class="progress mt-4 mb-4" style="height: 30px;">
-                <div class="progress-bar {% if result == "Cloud Burst" %}bg-danger{% else %}bg-success{% endif %}" 
+                <div class="progress-bar {% if result == "Cloud Burst" %}bg-danger{% elif result == "Cloudburst model not available" %}bg-warning{% else %}bg-success{% endif %}" 
                      role="progressbar" 
                      style="width: {{ confidence }}%;" 
                      aria-valuenow="{{ confidence }}" 
                      aria-valuemin="0" 
                      aria-valuemax="100">
-                    {{ confidence }}% Confidence
+                    {% if result == "Cloudburst model not available" %}Model Unavailable{% else %}{{ confidence }}% Confidence{% endif %}
                 </div>
             </div>
             

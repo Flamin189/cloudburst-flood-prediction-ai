@@ -14,6 +14,7 @@ import sqlite3
 import datetime
 from datetime import datetime
 from flood_predictor import get_flood_predictor, combine_alerts, fetch_latest_cloudburst_from_db
+import gdown
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -23,9 +24,45 @@ UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Model loading
+# Model configuration
 MODEL_PATH = 'models/AlexNet_best.h5'
-model = load_model(MODEL_PATH)
+MODEL_URL = 'https://drive.google.com/uc?id=1khdF5Xn9nTkVqmQti_44RdT-XcRTkgxr'
+
+def download_model():
+    """
+    Download the cloudburst model from Google Drive if it doesn't exist locally.
+    """
+    if not os.path.exists(MODEL_PATH):
+        print("Downloading model...")
+        # Create models directory if it doesn't exist
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+        try:
+            # Download the model
+            gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+            print("✓ Model downloaded successfully")
+        except Exception as e:
+            print(f"✗ Failed to download model: {e}")
+            print("Note: Make sure the Google Drive link is publicly accessible")
+            raise
+    else:
+        print("Model already exists, skipping download.")
+
+# Model loading with safe handling
+def load_cloudburst_model():
+    """
+    Safely load the cloudburst model with error handling.
+    """
+    try:
+        download_model()  # Ensure model is downloaded
+        model = load_model(MODEL_PATH)
+        print("✓ Cloudburst model loaded successfully")
+        return model
+    except Exception as e:
+        print(f"✗ Error loading cloudburst model: {e}")
+        return None
+
+# Load the model
+model = load_cloudburst_model()
 
 # Database setup
 def init_db():
@@ -227,6 +264,9 @@ def send_alert_email(to_email, flood_risk, cloudburst_result=None, confidence=No
         return False
 
 def predict_image(image_path):
+    if model is None:
+        return "Cloudburst model not available", 0.0
+    
     img = image.load_img(image_path, target_size=(224, 224))
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)

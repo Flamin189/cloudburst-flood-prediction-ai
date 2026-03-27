@@ -442,9 +442,10 @@ After implementing this module, you'll understand:
 
 ### To Deploy:
 1. Replace email credentials
-2. Configure database settings
-3. Run in production WSGI server
-4. Set up monitoring and logging
+2. Configure database settings  
+3. Ensure Google Drive model link is publicly accessible
+4. Run in production WSGI server
+5. Set up monitoring and logging
 
 ### To Integrate with Other Systems:
 - Use `FloodPredictor` class directly

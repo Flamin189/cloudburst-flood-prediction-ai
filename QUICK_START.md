@@ -4,8 +4,10 @@
 
 ### 1. Install Requirements
 ```bash
-pip install flask tensorflow scikit-learn pandas numpy werkzeug
+pip install flask tensorflow scikit-learn pandas numpy werkzeug gdown
 ```
+
+**Note:** The cloudburst detection model (~500MB) will be downloaded automatically from Google Drive on first use.
 
 ### 2. Train the Model (First Time Only)
 ```bash

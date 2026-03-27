@@ -1,0 +1,28 @@
+# Model files (large files downloaded at runtime)
+models/AlexNet_best.h5
+models/ResNet50_best.h5
+models/VGG16_best.h5
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+database.db
+
+# Uploads
+static/uploads/
+
+# Environment
+.env
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

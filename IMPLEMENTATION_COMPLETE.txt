@@ -23,7 +23,7 @@ d:\modify\cloud\                              ← Root directory
 │       └── requirements.txt                 ✓ NEW - Python dependencies
 │
 ├── models/                                  ← Machine learning models
-│   ├── AlexNet_best.h5                      (existing - cloudbursts)
+│   ├── AlexNet_best.h5                      (external - cloudbursts via Google Drive)
 │   ├── ResNet50_best.h5                     (existing - cloudbursts)
 │   ├── VGG16_best.h5                        (existing - cloudbursts)
 │   ├── flood_model.pkl                      ✓ NEW - Trained RandomForest
@@ -87,6 +87,11 @@ IMPLEMENTATION DETAILS
    └── train_pipeline()              - Complete workflow
 
 3. Flask Application Updates (app.py)
+   ├── External Model Hosting
+   │   ├── download_model()          ✓ NEW - Download from Google Drive
+   │   ├── load_cloudburst_model()   ✓ NEW - Safe model loading
+   │   └── predict_image()           ✓ UPDATED - Error handling
+   │
    ├── New Route: /upload_csv
    │   ├── GET  - Display CSV upload form
    │   └── POST - Process CSV, predict, combine with cloudburst
