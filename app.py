@@ -26,7 +26,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Model configuration
 MODEL_PATH = 'models/AlexNet_best.h5'
-MODEL_URL = 'https://drive.google.com/uc?id=1khdF5Xn9nTkVqmQti_44RdT-XcRTkgxr'
+MODEL_URL = 'https://drive.google.com/uc?export=download&id=1khdF5Xn9nTkVqmQti_44RdT-XcRTkgxr'
 
 # Keep flood model local if small (<100MB) and present in repo
 FLOOD_MODEL_PATH = 'models/flood_model.pkl'
@@ -104,7 +104,7 @@ def load_cloudburst_model():
     """
     Safely load the cloudburst model with error handling.
     Provides detailed diagnostic information for troubleshooting.
-    Exits application if model cannot be loaded (no fallbacks).
+    Returns None if model cannot be loaded (application continues with limited functionality).
     """
     model_path_abs = os.path.abspath(MODEL_PATH)
     print(f"\n{'='*60}")
@@ -118,10 +118,9 @@ def load_cloudburst_model():
         print(f"✗ Critical: Cloudburst model not available")
         print(f"  - Model file missing: {MODEL_PATH}")
         print(f"  - Google Drive download failed after retries")
-        print(f"  - Application cannot start without the model")
+        print(f"  - Application will continue but cloudburst predictions will fail")
         print(f"  - Check Google Drive sharing permissions and URL")
-        import sys
-        sys.exit(1)
+        return None
 
     try:
         print(f"Attempting to load model from: {MODEL_PATH}")
@@ -133,9 +132,8 @@ def load_cloudburst_model():
         print(f"✗ Error loading cloudburst model: {e}")
         print(f"  Type: {type(e).__name__}")
         print(f"  Ensure TensorFlow/Keras is properly installed")
-        print(f"  Application cannot start without the model")
-        import sys
-        sys.exit(1)
+        print(f"  Application will continue but cloudburst predictions will fail")
+        return None
 
 # Load the model on startup
 print(f"\n{'@'*60}")
