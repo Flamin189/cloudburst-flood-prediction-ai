@@ -1,0 +1,2 @@
+rainfall_intensity,rainfall_duration,humidity,temperature,terrain_type,elevation,soil_type,drainage_capacity,previous_rainfall
+80,4,70,25,Urban,50,Loamy,Moderate,60

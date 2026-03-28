@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="jumbotron bg-light p-5 rounded-lg mb-4">
+            <h1 class="display-4">Admin Dashboard</h1>
+            <p class="lead">Welcome, {{ session.username }}! Monitor all predictions and user activities.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Users</h5>
+                <h2 class="card-text">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Predictions</h5>
+                <h2 class="card-text">{{ predictions|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5 class="card-title">Cloud Bursts</h5>
+                <h2 class="card-text">{{ predictions|selectattr('prediction_result', 'equalto', 'Cloud Burst')|list|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Normal Clouds</h5>
+                <h2 class="card-text">{{ predictions|selectattr('prediction_result', 'equalto', 'Normal Cloud')|list|length }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Prediction History</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Image</th>
+                        <th>Prediction</th>
+                        <th>Confidence</th>
+                        <th>Date & Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prediction in predictions %}
+                    <tr>
+                        <td>{{ prediction.id }}</td>
+                        <td>{{ prediction.username }}</td>
+                        <td>{{ prediction.email }}</td>
+                        <td>
+                            <div class="admin-image-container">
+                                <img src="{{ prediction.image_path }}" class="img-thumbnail" alt="Prediction image" onerror="this.src='https://via.placeholder.com/100x75?text=Image+Not+Found'">
+                            </div>
+                        </td>
+                        <td>
+                            {% if prediction.prediction_result == "Cloud Burst" %}
+                                <span class="badge bg-danger">{{ prediction.prediction_result }}</span>
+                            {% else %}
+                                <span class="badge bg-success">{{ prediction.prediction_result }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.2f"|format(prediction.confidence) }}%</td>
+                        <td>{{ prediction.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

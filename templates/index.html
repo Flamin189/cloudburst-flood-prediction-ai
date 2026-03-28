@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded-lg mb-4">
+    <h1 class="display-4">Cloud Burst Detection System</h1>
+    <p class="lead">An advanced AI-based system for detecting cloud bursts using image processing technology.</p>
+    <hr class="my-4">
+    <p>Our system uses a convolutional neural network (CNN) to analyze cloud images and predict the likelihood of a cloud burst event.</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}" role="button">Get Started</a>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-cloud-rain me-2"></i>What is Cloud Burst?</h5>
+                <p class="card-text">A cloud burst is an extreme amount of precipitation in a short period of time, sometimes accompanied by hail and thunder. It can cause flash floods and landslides.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-brain me-2"></i>How It Works</h5>
+                <p class="card-text">Our system uses deep learning algorithms to analyze cloud images and detect patterns that indicate a potential cloud burst event.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-shield-alt me-2"></i>Safety Alerts</h5>
+                <p class="card-text">When a cloud burst is detected, our system immediately sends alert emails to registered users, giving them time to take necessary precautions.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">For Users</h5>
+                <p class="card-text">Register an account to upload cloud images and receive instant predictions. Get email alerts when cloud bursts are detected.</p>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Register Now</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">For Administrators</h5>
+                <p class="card-text">Monitor all predictions and user activities through the admin dashboard. Access comprehensive analytics and reports.</p>
+                <a href="{{ url_for('admin_login') }}" class="btn btn-secondary">Admin Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+date,month,year,location,rainfall_mm,humidity_pct,temperature_c,water_level_m,flood_severity,flood_occurred
+02,12,2015,Chennai,399,96,25,5.2,Extreme,1
+12,12,2016,Chennai,224,93,26,4.6,High,1
+20,10,2017,Chennai,45,82,29,2.1,Low,0
+25,07,2018,Chennai,38,78,31,1.9,Low,0
+05,11,2019,Chennai,180,90,27,4.1,High,1
+26,11,2020,Chennai,125,88,26,3.7,Moderate,1
+10,09,2021,Chennai,62,84,30,2.5,Low,0
+08,11,2021,Chennai,210,94,26,4.8,High,1
+15,08,2022,Chennai,28,76,32,1.7,Low,0
+02,12,2022,Chennai,140,89,27,3.5,Moderate,1
+18,10,2023,Chennai,75,85,29,2.9,Moderate,0
+04,12,2023,Chennai,190,92,26,4.3,High,1
+11,11,2024,Chennai,58,83,30,2.6,Low,0
+03,12,2024,Chennai,165,91,27,4.0,High,1
