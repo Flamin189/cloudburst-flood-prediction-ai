@@ -75,7 +75,7 @@ def init_db():
     
     conn.commit()
     conn.close()
-
+#flamin
 # Initialize database
 init_db()
 
