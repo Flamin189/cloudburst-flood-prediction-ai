@@ -100,10 +100,6 @@ def predict_image(image_path):
     return "Normal Cloud", prediction * 100
 
 # ---------------- ROUTES ----------------
-@app.route("/")
-def home():
-    return "Cloudburst API is running 🚀"
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
