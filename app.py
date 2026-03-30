@@ -100,6 +100,11 @@ def predict_image(image_path):
     return "Normal Cloud", prediction * 100
 
 # ---------------- ROUTES ----------------
+
+@app.route('/')
+def index():
+    return redirect('/login')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -170,6 +175,8 @@ def predict():
 def logout():
     session.clear()
     return redirect('/')
+
+
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
