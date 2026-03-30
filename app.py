@@ -24,8 +24,8 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ---------------- MODEL ----------------
-MODEL_URL = "https://github.com/Flamin189/cloudburst-flood-prediction-ai/releases/download/v1.0/AlexNet_best.h5"
-MODEL_PATH = "models/AlexNet_best.h5"
+MODEL_URL = "https://alexnet948652.s3.eu-north-1.amazonaws.com/AlexNet_best.h5"
+MODEL_PATH = "AlexNet_best.h5"
 
 model = None  # Lazy loading
 
